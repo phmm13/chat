@@ -51,6 +51,7 @@ public class ClientSocket extends Thread{
 				if(mensagemLida.equals("desconectado")){
 					System.out.println("Conexão encerrada!");
                     this.conexao.close();
+                    System.exit(0);
 				}else{
 	                //imprime a mensagem recebida
 	                System.out.println(mensagemLida);

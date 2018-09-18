@@ -21,10 +21,10 @@ public class SocketServer extends Thread {
 		this.porta = 12345;
 		this.clientes = new ArrayList<>();
 	}
-	
+
 	public List<String> participantes() {
 		List<String> listaNomes = new ArrayList<>();
-		for(Client cliente : getInstance().clientes) {
+		for (Client cliente : getInstance().clientes) {
 			listaNomes.add(cliente.getNickName());
 		}
 		return listaNomes;
@@ -58,21 +58,23 @@ public class SocketServer extends Thread {
 		try {
 			boolean apelido = true;
 			Scanner bfEntrada = new Scanner(this.conexao.getInputStream());
-			PrintStream psSaida = new PrintStream(this.conexao.getOutputStream());
+			PrintStream psSaida = new PrintStream(
+					this.conexao.getOutputStream());
 			psSaida.println("Digite seu nick");
 			while (apelido) {
-				
+
 				this.nomeCliente = bfEntrada.nextLine();
-				if (!entrar(this.nomeCliente)) {
+				if (!validaNick(this.nomeCliente)) {
 					psSaida.println("Ja existe um cliente com esse nome");
 					psSaida.println("Digite seu nick novamente");
-					//this.conexao.close();
+					// this.conexao.close();
 				} else {
 					apelido = false;
-					adcApelido(this.conexao,this.nomeCliente);
+					adcApelido(this.conexao, this.nomeCliente);
 					System.out.println(this.nomeCliente + " conectado!");
 
-					psSaida.println("Clientes conectados : " + this.participantes());
+					psSaida.println("Clientes conectados : "
+							+ this.participantes());
 				}
 			}
 
@@ -81,14 +83,14 @@ public class SocketServer extends Thread {
 				if (msg.length == 2) {
 					switch (msg[0]) {
 
-					case "MSG": 
+					case "MSG":
 						enviarParaTodos(psSaida, msg[1]);
 						break;
-					
-					case "NICK": 
+
+					case "NICK":
 						mudar(this.nomeCliente, msg[1], psSaida);
 						break;
-					
+
 					}
 
 				} else {
@@ -110,37 +112,40 @@ public class SocketServer extends Thread {
 		this.conexao = socket;
 	}
 
-	public void enviarParaTodos(PrintStream saida, String msg) throws Exception{
+	public void enviarParaTodos(PrintStream saida, String msg) throws Exception {
 		for (Client cliente : getInstance().clientes) {
 			if (!cliente.getSocket().equals(this.conexao)) {
-				PrintStream psChat = new PrintStream(cliente.getSocket().getOutputStream());
-				psChat.println("-"+this.nomeCliente+"- "+msg);
+				PrintStream psChat = new PrintStream(cliente.getSocket()
+						.getOutputStream());
+				psChat.println(this.nomeCliente + ": " + msg);
 			}
 		}
 	}
 
-	public void enviarPrivado(String privado, String msg) throws Exception{
-		
-		for(Client cliente : getInstance().clientes) {
-			if(cliente.getNickName().equals(privado)) {
-				PrintStream psChat = new PrintStream(cliente.getSocket().getOutputStream());
-				psChat.println("-"+this.nomeCliente+"- "+msg);
+	public void enviarPrivado(String privado, String msg) throws Exception {
+
+		for (Client cliente : getInstance().clientes) {
+			if (cliente.getNickName().equals(privado)) {
+				PrintStream psChat = new PrintStream(cliente.getSocket()
+						.getOutputStream());
+				psChat.println(this.nomeCliente + ": " + msg);
 			}
 		}
 	}
 
-	public void adcApelido(Socket socket,String apelido) {
-		for(Client cliente : getInstance().clientes) {
-			if(cliente.getSocket().equals(socket)) {
+	public void adcApelido(Socket socket, String apelido) {
+		for (Client cliente : getInstance().clientes) {
+			if (cliente.getSocket().equals(socket)) {
 				cliente.setNickName(apelido);
 			}
 		}
 	}
-	public boolean entrar(String nick) {
+
+	public boolean validaNick(String nick) {
 		boolean retorno = true;
 		for (Client cliente : getInstance().clientes) {
 			if (cliente.getNickName() != null) {
-				if(cliente.getNickName().equals(nick))
+				if (cliente.getNickName().equals(nick))
 					retorno = false;
 			}
 		}
@@ -148,18 +153,44 @@ public class SocketServer extends Thread {
 		return retorno;
 	}
 
-	public void mudar(String nickNovo, String nickAntigo, PrintStream ps) {
-		for(Client cliente : getInstance().clientes) {
-			if(cliente.getNickName().equals(nickAntigo)) {
-				cliente.setNickName(nickNovo);
-				ps.println("Nick alterado com sucesso de ("+nickAntigo+") para ("+nickNovo+").");
+	public void mudar(String nickAntigo, String nickNovo, PrintStream ps) {
+		for (Client cliente : getInstance().clientes) {
+			if (cliente.getNickName().equals(nickAntigo)) {
+				if (validaNick(nickNovo)) {
+
+					Client novo = new Client(cliente.getSocket(), nickNovo);
+					getInstance().clientes.remove(cliente);
+					getInstance().clientes.add(novo);
+					this.nomeCliente = nickNovo;
+					ps.println("Nick alterado com sucesso de (" + nickAntigo
+							+ ") para (" + nickNovo + ").");
+				} else {
+					ps.println("Nick ja em uso");
+				}
 			}
 		}
 	}
 
 	public void sair(String nick) throws Exception {
-		getInstance().clientes.remove(nick);
-		this.conexao.close();
+		Client saiu = new Client();
+		for (Client client : getInstance().clientes) {
+			if (client.getNickName().equals(nick)) {
+				saiu =client;
+				
+				
+			}
+		}
+		PrintStream psChat = new PrintStream(saiu.getSocket()
+				.getOutputStream());
+		psChat.println("desconectado");
+		getInstance().clientes.remove(saiu);
+		System.out.println(nick+" saiu do servidor");
+		for (Client client : getInstance().clientes) {
+			psChat = new PrintStream(client.getSocket()
+					.getOutputStream());
+			psChat.println(nick + " saiu!");
+
+		}
 	}
 
 }

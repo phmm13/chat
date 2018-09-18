@@ -48,13 +48,12 @@ public class ClientSocket extends Thread{
 			while(true){
 				mensagemLida = bfEntrada.nextLine();
 				
-				if(mensagemLida.equals("sair")){
+				if(mensagemLida.equals("desconectado")){
 					System.out.println("Conexão encerrada!");
-                    System.exit(0);
+                    this.conexao.close();
 				}else{
-					System.out.println();
 	                //imprime a mensagem recebida
-	                System.out.println("MENSAGEM RECEBIDA na thread: "+mensagemLida);
+	                System.out.println(mensagemLida);
 				}
 			}
 		}catch(Exception e){

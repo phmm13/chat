@@ -5,10 +5,16 @@ public class Client {
 	private Socket socket;
 	private String nickName;
 	
+	public Client(Socket socket,String nick){
+		this.socket = socket;
+		this.nickName = nick;
+	}
 	public Client(Socket socket) {
 		this.socket = socket;
 	}
 
+	public Client() {
+	}
 	public Socket getSocket() {
 		return socket;
 	}
